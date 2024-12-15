@@ -3,8 +3,11 @@ import { OnJiraWebhook } from './decorators/webhook.decorator';
 import { Logger } from 'nestjs-pino';
 import { JIRA_WEBHOOK_EVENTS } from './events';
 import { JiraWebhookEventDto } from './dto/webhook.dto';
-import { JiraStatusHandler } from './status.handler';
+import { JiraStatusHandler } from './jiraStatus.handler';
 import { JIRA_STATUS_HANDLER_METADATA } from './decorators/status.decorator';
+import { ConfigService } from '@nestjs/config';
+import { JiraService } from './jira.service';
+import { prMapStringToJson } from './util';
 
 const {
   ISSUE_CREATED,
@@ -14,10 +17,16 @@ const {
 
 @Injectable()
 export class JiraWebhookHandler {
+  private JiraPrField: string
   constructor(
     private readonly logger: Logger,
-    private readonly statusHandler: JiraStatusHandler
-  ) { }
+    private readonly statusHandler: JiraStatusHandler,
+    private config: ConfigService,
+  ) {
+    this.JiraPrField = this.config.getOrThrow('JIRA_GITHUB_FIELD')
+  }
+
+
 
   @OnJiraWebhook(ISSUE_CREATED)
   handleIssueCreated(payload: JiraWebhookEventDto) {

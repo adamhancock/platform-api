@@ -1,16 +1,4 @@
-type PullRequest = {
-  dataType: string;
-  state: string;
-  stateCount: number;
-};
-
-type PullRequestObject = {
-  pullrequest: PullRequest;
-  json: any;
-};
-
-
-
+import { JiraPullRequestObject } from "./types";
 
 export function prMapStringToJson(str: string) {
 
@@ -22,5 +10,6 @@ export function prMapStringToJson(str: string) {
     .replace(/}\}$/, '}}');
 
   // Now fixed should be valid JSON
-  return JSON.parse(fixed) as PullRequestObject
+  console.log(fixed)
+  return JSON.parse(fixed) as JiraPullRequestObject
 }

@@ -4,10 +4,12 @@ import { Version3Client } from 'jira.js';
 import { JiraController } from './jira.controller';
 import { JiraService } from './jira.service';
 import { JiraWebhookHandler } from './jira.handler';
-import { JiraStatusHandler } from './status.handler';
+import { JiraStatusHandler } from './jiraStatus.handler';
+import { GithubModule } from '../github/github.module';
+import { JiraApiService } from './jiraApi.service';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, GithubModule],
   controllers: [JiraController],
   providers: [
     {
@@ -27,8 +29,9 @@ import { JiraStatusHandler } from './status.handler';
     },
     JiraService,
     JiraWebhookHandler,
-    JiraStatusHandler
+    JiraStatusHandler,
+    JiraApiService
   ],
-  exports: [JiraService, JiraWebhookHandler, JiraStatusHandler],
+  exports: [JiraService, JiraWebhookHandler, JiraStatusHandler, JiraApiService, Version3Client],
 })
 export class JiraModule { }

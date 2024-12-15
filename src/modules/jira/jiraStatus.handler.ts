@@ -3,8 +3,9 @@ import { Logger } from 'nestjs-pino';
 import { OnJiraStatus } from './decorators/status.decorator';
 import { JIRA_STATUS } from './status.constants';
 import { JiraWebhookEventDto } from './dto/webhook.dto';
-import { prMapStringToJson } from './util';
 import { ConfigService } from '@nestjs/config';
+import { GithubApiService } from '../github/githubApi.service';
+import { JiraApiService } from './jiraApi.service';
 
 const {
   TODO,
@@ -18,10 +19,13 @@ const {
 @Injectable()
 export class JiraStatusHandler {
 
-  private JiraPrField: string
-  constructor(private readonly logger: Logger, private config: ConfigService) {
+  private JiraPrField: string;
 
-    this.JiraPrField = this.config.getOrThrow('JIRA_GITHUB_FIELD')
+  constructor(private readonly logger: Logger,
+    private config: ConfigService,
+    private github: GithubApiService,
+    private jiraApi: JiraApiService) {
+    this.JiraPrField = this.config.getOrThrow('JIRA_GITHUB_FIELD');
   }
 
   @OnJiraStatus(TODO)
@@ -76,21 +80,46 @@ export class JiraStatusHandler {
   }
 
   @OnJiraStatus(READY_TO_MERGE)
-  handleReadyToMergeStatus(payload: JiraWebhookEventDto) {
+  async handleReadyToMergeStatus(payload: JiraWebhookEventDto) {
     const { issue } = payload;
     this.logger.log({
-      message: 'Issue moved to Ready to Merge!!!',
+      message: 'Issue moved to Ready to Merge',
       issueKey: issue.key,
     });
 
-    const pr = prMapStringToJson(issue.fields[this.JiraPrField]);
+    const { pullRequests } = await this.jiraApi.fetchGithubDevelopmentInformation(issue.id);
+
+    if (pullRequests.length === 0) {
+      this.logger.log({
+        message: 'No PRs found for this issue',
+        issueKey: issue.key,
+      });
+      return {
+        status: 400,
+        message: 'No PRs found for this issue',
+      };
+    }
+
+    for await (const pullRequest of pullRequests) {
+      if (pullRequest.status === 'OPEN')
+        await this.github.mergePullRequest(
+          pullRequest.owner,
+          pullRequest.repo,
+          pullRequest.number,
+        );
+
+    }
+
+    // mark jira issue as done
+    await this.jiraApi.updateJiraIssueStatus(issue.id, 'Done');
+
     return {
       message: `Issue ${issue.key} moved to Ready to Merge`,
       issue: {
         key: issue.key,
         summary: issue.fields.summary,
         status: READY_TO_MERGE,
-        pr
+        pullRequests,
       },
     };
   }
