@@ -38,6 +38,9 @@ importers:
       class-validator:
         specifier: ^0.14.1
         version: 0.14.1
+      express:
+        specifier: ^4.21.2
+        version: 4.21.2
       graphql-request:
         specifier: ^6.1.0
         version: 6.1.0(graphql@16.10.0)
