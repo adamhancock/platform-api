@@ -13,6 +13,8 @@ async function bootstrap() {
       req.rawBody = buf;
     }
   }));
+  // set global prefix for all routes
+  app.setGlobalPrefix('api');
 
   app.useLogger(app.get(Logger));
   await app.listen(process.env.PORT ?? 3000);
