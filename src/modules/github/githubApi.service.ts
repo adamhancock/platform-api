@@ -1,8 +1,7 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { WEBHOOK_HANDLER_METADATA } from './decorators/webhook.decorator';
-import { GithubWebhookHandler } from './github.handler';
+import { Injectable } from '@nestjs/common';
 import { Octokit } from 'octokit';
 import { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods';
+import { MergePullRequestPayload } from './types';
 
 @Injectable()
 export class GithubApiService {
@@ -10,14 +9,23 @@ export class GithubApiService {
 
 
   async mergePullRequest(
-    owner: string,
-    repo: string,
-    pull_number: number
+    payload: MergePullRequestPayload
   ): Promise<RestEndpointMethodTypes['pulls']['merge']['response']> {
+    const { owner, repo, number } = payload;
+
     return this.api.rest.pulls.merge({
       owner: owner,
       repo: repo,
-      pull_number: pull_number,
+      pull_number: number,
     });
+  }
+
+  async mergeOpenPullRequests(payload: MergePullRequestPayload[]) {
+    for await (const pullRequest of payload) {
+      if (pullRequest.status !== 'OPEN') {
+        continue;
+      }
+      await this.mergePullRequest(pullRequest);
+    }
   }
 }

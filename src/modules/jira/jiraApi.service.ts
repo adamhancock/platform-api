@@ -31,7 +31,6 @@ export class JiraApiService {
     const pullRequests = githubData.repository.flatMap((pr) => pr.pullRequests.map((pullRequest) => {
       const { owner, repo, number } = this.getGithubOwnerRepoAndNumberFromUrl(pullRequest.url);
 
-
       return {
         ...pullRequest,
         owner,

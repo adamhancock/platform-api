@@ -100,28 +100,12 @@ export class JiraStatusHandler {
       };
     }
 
-    for await (const pullRequest of pullRequests) {
-      if (pullRequest.status === 'OPEN')
-        await this.github.mergePullRequest(
-          pullRequest.owner,
-          pullRequest.repo,
-          pullRequest.number,
-        );
-
-    }
+    await this.github.mergeOpenPullRequests(pullRequests);
 
     // mark jira issue as done
     await this.jiraApi.updateJiraIssueStatus(issue.id, 'Done');
 
-    return {
-      message: `Issue ${issue.key} moved to Ready to Merge`,
-      issue: {
-        key: issue.key,
-        summary: issue.fields.summary,
-        status: READY_TO_MERGE,
-        pullRequests,
-      },
-    };
+    return { status: 200, message: 'PRs merged successfully' };
   }
 
   @OnJiraStatus(BLOCKED)
