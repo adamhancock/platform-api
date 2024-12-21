@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OnGithubWebhook } from './decorators/webhook.decorator';
 import { Logger } from 'nestjs-pino';
+import { DependabotAlertPayload } from './types';
 
 @Injectable()
 export class GithubWebhookHandler {
@@ -43,6 +44,27 @@ export class GithubWebhookHandler {
         title: issue.title,
         state: issue.state,
       },
+    };
+  }
+
+  @OnGithubWebhook('dependabot_alert')
+  handleDependabotAlertEvent(payload: DependabotAlertPayload) {
+    this.logger.log('Processing Dependabot alert event');
+    const { action, alert, repository } = payload;
+
+    return {
+      message: `Received Dependabot alert ${action} event for ${repository.full_name}`,
+      alert: {
+        number: alert.number,
+        state: alert.state,
+        package: alert.dependency.package.name,
+        ecosystem: alert.dependency.package.ecosystem,
+        severity: alert.security_advisory.severity,
+        summary: alert.security_advisory.summary,
+        cvssScore: alert.security_advisory.cvss.score,
+        createdAt: alert.created_at,
+        updatedAt: alert.updated_at
+      }
     };
   }
 }
